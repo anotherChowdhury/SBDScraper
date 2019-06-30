@@ -1,5 +1,6 @@
 import math
 import shutil
+from threading import Thread
 
 import bs4
 import requests
@@ -263,7 +264,18 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
 
         zara = bs4.BeautifulSoup(res, 'html.parser')
 
+        image_link = zara.find_all('a', attrs={'_seoImg main-image'})
+
+
+
         title = zara.find('h1', attrs={'class': 'product-name'}).text.strip().replace('Details', '').strip()
+
+        try:
+            Thread(target=download_image, args=(image_link,title,i)).start()
+        except Exception:
+            print (Exception)
+
+
         color = zara.find('span', attrs={'class': '_colorName'}).text.strip()
 
         title = "ZARA " + title + '(Color:' + color + ')'
@@ -294,21 +306,25 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         else:
             cdn = math.ceil((float(cdn) + ((float(cdn) * 15) / 100)))
 
-        image_link = zara.find_all('a', attrs={'_seoImg main-image'})
-
-        count = len(image_link)
 
 
-        for links in range(len(image_link)):
-            link = image_link[links].find('img').attrs['src']
-            link = 'https:' + link
-            filename = str(i)+ '.' + str(count) + title + '.jpg'
 
-            response = requests.get(link,stream=True)
-            with open(filename, 'wb') as out_file:
-                shutil.copyfileobj(response.raw, out_file)
 
-            count = count - 1
+
+
+        # count = len(image_link)
+
+
+        # for links in range(len(image_link)):
+        #     link = image_link[links].find('img').attrs['src']
+        #     link = 'https:' + link
+        #     filename = str(i)+ '.' + str(count) + title + '.jpg'
+        #
+        #     response = requests.get(link,stream=True)
+        #     with open(filename, 'wb') as out_file:
+        #         shutil.copyfileobj(response.raw, out_file)
+
+            # count = count - 1
 
         taka = cdn * rate
         advnc_req = "{:,}".format(math.ceil((taka / 2.5) / 100) * 100)
@@ -327,8 +343,6 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         outfile.write(format_placeholders(title, cdn, taka, url, advnc_req, discount, week))
         outfile.close()
 
-
-
     elif url.startswith('https://www.michaelkors.ca/'):
 
         options = Options()
@@ -343,6 +357,15 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
 
         mk = bs4.BeautifulSoup(res, 'html.parser')
 
+        name = mk.find_all('li',attrs={'class':'product-name'})[0].text
+
+        image_link = mk.find_all('figure', attrs={'class':'gallery-images-item'})
+
+        try:
+            Thread(target=download_image, args=(image_link,name,i)).start()
+        except Exception:
+            print (Exception)
+
         title = mk.find_all('ul', attrs={'class': 'brand-desc-container'})[0].text.split('#')[0].replace('Style','').strip()
         color = mk.find('span', attrs={'class': 'selected-color'}).text
 
@@ -351,22 +374,22 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         original_price = float(mk.find('div', attrs={'class': ['listPrice','Price']}).text.split('$')[1])
         discounted__price = mk.find('div', attrs={'class': 'salePrice'})
 
-        name = mk.find_all('li',attrs={'class':'product-name'})[0].text
 
-        image_link = mk.find_all('figure', attrs={'class':'gallery-images-item'})
 
-        count = len(image_link)
 
-        for links in range(len(image_link)):
-            link = image_link[links].find('img').attrs['src']
-            link = 'https:' + link
-            filename = str(i)+ '.' + str(count) + name + '.jpg'
 
-            response = requests.get(link,stream=True)
-            with open(filename, 'wb') as out_file:
-                shutil.copyfileobj(response.raw, out_file)
-
-            count = count - 1
+        # count = len(image_link)
+        #
+        # for links in range(len(image_link)):
+        #     link = image_link[links].find('img').attrs['src']
+        #     link = 'https:' + link
+        #     filename = str(i)+ '.' + str(count) + name + '.jpg'
+        #
+        #     response = requests.get(link,stream=True)
+        #     with open(filename, 'wb') as out_file:
+        #         shutil.copyfileobj(response.raw, out_file)
+        #
+        #     count = count - 1
 
         if discounted__price is not None:
             discounted__price = discounted__price.text.split('$')[1]
@@ -399,12 +422,6 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         outfile = open("out.txt", "a+")
         outfile.write(format_placeholders(title, cdn, taka, url, advnc_req, discount, week))
         outfile.close()
-
-
-
-
-
-
     elif url.startswith('https://www2.hm.com/en_ca/'):
 
         options = Options()
@@ -420,6 +437,16 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         hm = bs4.BeautifulSoup(res, 'html.parser')
 
         title = hm.find_all('section', attrs={'class': 'name-price'})[0].find('h1').text.strip()
+
+        image_link = [hm.find('div',attrs={'class': 'product-detail-main-image-container'}).find('img').attrs['src']]
+        image_link.append(hm.find('figure',attrs={'class': 'pdp-secondary-image pdp-image'}).find('img').attrs['src'])
+
+        try:
+            Thread(target=download_image, args=(image_link,title,i)).start()
+        except Exception:
+            print (Exception)
+
+
         color = hm.find('h3', attrs={'class': 'product-input-label'}).text.strip()
 
         title = 'H&M ' + title + '(Color:' + color + ')'
@@ -435,17 +462,18 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         else:
             original_price = price[1]
 
-        image_link = [hm.find('div',attrs={'class': 'product-detail-main-image-container'}).find('img').attrs['src']]
-        image_link.append(hm.find('figure',attrs={'class': 'pdp-secondary-image pdp-image'}).find('img').attrs['src'])
-
-        count = len(image_link)
 
 
-        for links in range(len(image_link)):
-            link = 'https:' + image_link[links]
-            filename = str(i)+ '.' + str(count) + title + '.jpg'
-            urllib.request.urlretrieve(link, filename)
-            count = count - 1
+
+
+        # count = len(image_link)
+        #
+        #
+        # for links in range(len(image_link)):
+        #     link = 'https:' + image_link[links]
+        #     filename = str(i)+ '.' + str(count) + title + '.jpg'
+        #     urllib.request.urlretrieve(link, filename)
+        #     count = count - 1
 
 
 
@@ -475,6 +503,11 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         outfile = open("out.txt", "a+")
         outfile.write(format_placeholders(title, cdn, taka, url, advnc_req, discount, week))
         outfile.close()
+
+        try:
+            Thread(target=download_image, args=(image_link,title,i)).start()
+        except Exception:
+            print (Exception)
 
 
 
@@ -558,25 +591,38 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
 
         title = guess.find_all('div', attrs={'class': 'rightdetails col-lg-3 col-sm-6'})[0].find('h1').text.strip()
         title = 'Guess ' + title
+
+        image_link = guess.find_all('div', attrs={'class': 's7staticimage'})
+
+        try:
+            Thread(target=download_image, args=(image_link, title, i)).start()
+        except Exception:
+            print(Exception)
+
+
+
         original_price = float(guess.find('span', attrs={'class': 'original'}).text.strip().replace('CAD', ''))
         discounted_price = float(guess.find('span', attrs={'class': 'priceVal actual'}).text.strip().replace('CAD', ''))
         if discounted_price == original_price:
             discounted_price = None
 
-        image_link = guess.find_all('div', attrs={'class': 's7staticimage'})
 
-        count = len(image_link)
 
-        for links in range(len(image_link)):
 
-            link = image_link[links].find('img').attrs['src']
-            filename = str(i)+ '.' + str(count) + title + '.jpg'
 
-            response = requests.get(link,stream=True)
-            with open(filename, 'wb') as out_file:
-                shutil.copyfileobj(response.raw, out_file)
 
-            count = count - 1
+        # count = len(image_link)
+
+        # for links in range(len(image_link)):
+        #
+        #     link = image_link[links].find('img').attrs['src']
+        #     filename = str(i)+ '.' + str(count) + title + '.jpg'
+        #
+        #     response = requests.get(link,stream=True)
+        #     with open(filename, 'wb') as out_file:
+        #         shutil.copyfileobj(response.raw, out_file)
+        #
+        #     count = count - 1
 
 
         if discounted_price:
@@ -608,4 +654,95 @@ def scrap_data(url: str,i,rate: int=75, week: str=6):
         outfile = open("out.txt", "a+")
         outfile.write(format_placeholders(title, cdn, taka, url, advnc_req, discount, week))
         outfile.close()
+    elif url.startswith('https://www.forever21.com/ca/'):
+
+
+        options = Options()
+        options.add_argument("--headless")
+
+        browser = webdriver.Firefox(executable_path='webDrivers/geckodriver', options=options)
+        browser.get(url)
+
+        res = browser.page_source
+
+        browser.quit()
+
+        f21 = bs4.BeautifulSoup(res, 'html.parser')
+
+        name = f21.find('div', attrs={'class': 'container row pr_10 pl_10'}).find('h1').text.strip()
+        image_links = [f21.find('div', attrs={'class': 'owl-stage'})]
+
+        try:
+            Thread(target=download_image, args=(image_links,name ,i)).start()
+        except Exception:
+            print(Exception)
+
+        title = 'Forever21 ' + name
+
+        original_price = float(f21.find('span', attrs={'class': ['pr_20', 'p_old_price pr_5']}).text.replace("CAD $",
+                                                                                                              '').strip())
+
+        discounted_price = f21.find('span', attrs={'class': 'p_sale t_bold t_pink pt_10'})
+
+
+        if discounted_price is not None:
+            discounted_price = discounted_price.text.replace("CAD $", '').strip()
+            cdn = float(discounted_price)
+            discount = math.floor(((original_price - cdn) / original_price) * 100)
+            discount = str(discount) + '%'
+        else:
+            cdn = original_price
+
+
+        if cdn < 50:
+            cdn = math.ceil((cdn+11.95) + (((cdn+11.95)*15)/100))
+
+        else:
+           cdn = math.ceil((cdn+((cdn*15)/100)))
+
+        taka = cdn * rate
+        advnc_req = "{:,}".format(math.ceil((taka / 2.5) / 100) * 100)
+        taka = "{:,}".format(cdn*rate)
+
+
+
+
+
+        output = "Title: " + title + "\nPrice: " + str(cdn) + (
+        "\nDiscount: " + str(discount) if discount != [] else "") + "\nShipping Time: " + str(week) + "\n" + (
+                     "*" * 30)
+        print(output)
+        outfile = open("out.txt", "a+")
+        outfile.write(format_placeholders(title, cdn, taka, url, advnc_req, discount, week))
+        outfile.close()
+
+
+
+
+
+
+
+
+def download_image(image_link,name:str,i:int):
+
+
+
+    count = len(image_link)
+
+
+    for links in range(len(image_link)):
+        link = image_link[links].find('img').attrs['src']
+        if 'Guess' and 'forever21' not in name:
+            link = 'https:' + link
+        print(link)
+        filename = str(i) + '.' + str(count) + name + '.jpg'
+
+        response = requests.get(link, stream=True)
+        with open(filename, 'wb') as out_file:
+            shutil.copyfileobj(response.raw, out_file)
+
+        count = count - 1
+
+
+
 
