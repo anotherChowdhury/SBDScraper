@@ -11,7 +11,7 @@ from selenium.webdriver.firefox.options import Options
 
 
 def format_placeholders(title, cdn, taka, link, advnc_req, discount, week):
-    body = f"\n    ++ SHOPTOBD DEAL++" \
+    body = f"\n    ++ SHOPTOBD DEAL[Delivery in 2 Weeks]++" \
            f"\n----------------------------------" \
            f"\n{title}{ ' - ' + str(discount) + ' OFF' if discount !=[] else ''}" \
            f"\nSale Price - ${str(cdn)} (with Tax)" \
@@ -48,7 +48,7 @@ def format_placeholders(title, cdn, taka, link, advnc_req, discount, week):
 
 
 
-def scrap_data(url: str,i,rate: int=75, week: str=6):
+def scrap_data(url: str,i,rate: int=75, week: str="2 Weeks Minimum"):
 
 
     if url.startswith('https://www.amazon.ca'):
