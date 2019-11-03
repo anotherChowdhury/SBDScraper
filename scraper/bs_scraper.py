@@ -11,7 +11,7 @@ from selenium.webdriver.firefox.options import Options
 
 
 def format_placeholders(title, cdn, taka, link, advnc_req, discount, week):
-    body = f"\n    ++ SHOPTOBD DEAL[Delivery in 2 Weeks]++" \
+    body = f"\n    ++ SHOPTOBD DEAL[Delivery in 18 Days]++" \
            f"\n----------------------------------" \
            f"\n{title}{ ' - ' + str(discount) + ' OFF' if discount !=[] else ''}" \
            f"\nSale Price - ${str(cdn)} (with Tax)" \
@@ -26,7 +26,7 @@ def format_placeholders(title, cdn, taka, link, advnc_req, discount, week):
            f"\nAdvance Required - TK {advnc_req}" \
            f"\nQuantity Available - Limited" \
            f"\nOrder by:While the deal lasts " \
-           f"\nExpected Shipment Arrival: \n{str(week)} Weeks(End of July)" \
+           f"\nExpected Shipment Arrival: \n{str(week)}" \
            f"\n----------------------------------" \
            f"\n**ATTENTION: Please try to use PC/Laptop & Google Chrome Browser. The system isn't fully compatible in Mobile or other browsers.**" \
            f"\n\nHow to Order:" \
@@ -41,14 +41,7 @@ def format_placeholders(title, cdn, taka, link, advnc_req, discount, week):
     return body
 
 
-
-
-
-
-
-
-
-def scrap_data(url: str,i,rate: int=75, week: str="2 Weeks Minimum"):
+def scrap_data(url: str, i, rate: int = 75, week: str = "Mid November"):
 
 
     if url.startswith('https://www.amazon.ca'):
@@ -126,12 +119,7 @@ def scrap_data(url: str,i,rate: int=75, week: str="2 Weeks Minimum"):
             discount = []
             cdn = original_price
 
-        if cdn < 70:
-            cdn = math.ceil((float(cdn) + 6) + (((float(cdn) + 6) * 15) / 100))
-
-
-        else:
-            cdn = math.ceil((float(cdn) + ((float(cdn) * 15) / 100)))
+        cdn = math.ceil((float(cdn) + ((float(cdn) * 15) / 100)))
 
         #
         # if discount != []:
@@ -208,28 +196,34 @@ def scrap_data(url: str,i,rate: int=75, week: str="2 Weeks Minimum"):
         title = 'Fossil '+title + '(' + model + ')'
 
         price = fossil.find('div', attrs={
-            'class': ["col-md-12 product-price-display text-display-4 pdp-margin-bottom hidden-xs "]}).getText().strip()
+            'class': ["product-price-display"]}).text.strip()
+        price = price.replace("CAD", '')
+        price = price.replace("\n", '')
+        price = price.replace("\t", '')
+        price = price.split(" ")[1]
+
+        price = float(price)
 
         discount = fossil.find_all('span', attrs={'class': 'text-danger'})
         image_link = fossil.find_all('a', attrs={'class': ['magnifik']})[0].attrs['href'].strip()
 
-        price = price[4:10]
+
 
         if (discount != []):
 
             discount = fossil.find_all('span', attrs={'class': 'text-danger'})[0].getText().strip()
-            discount = discount[4:]
-            discounted_price = discount
+            discount = discount.replace("CAD ", "")
+            discounted_price = float(discount)
             # if 'Hybrid' not in title:
             #     cdn = math.ceil(((float(discounted_price)+ 0.25 )+ (((float(discounted_price)+ 0.25) * 15) / 100)))
             #     discount = math.floor(((float(price) - float(discount)) / float(price)) * 100)
             #     discount = str(discount) + '%'
             # else:
-            cdn = float(discounted_price)-((float(discounted_price) * 25) / 100)
-            discount = math.floor(((float(price) - float(cdn)) / float(price)) * 100)
+            # cdn = float(discounted_price)-((float(discounted_price) * 25) / 100)
+            discount = math.floor(((price - discounted_price) / price) * 100)
             discount = str(discount) + '%'
 
-            cdn = math.ceil(((float(cdn) + 0.25) + ((float(cdn) + 0.25)  * 15) / 100))
+            cdn = math.ceil(((discounted_price + 0.25) + ((discounted_price + 0.25) * 15) / 100))
 
         else:
             cdn = math.ceil(((float(price)+ 0.25) + ((float(price) + 0.25) * 15) / 100))
