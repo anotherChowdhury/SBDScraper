@@ -1,5 +1,6 @@
 import math
 import shutil
+import time
 from threading import Thread
 
 import bs4
@@ -11,37 +12,36 @@ from selenium.webdriver.firefox.options import Options
 
 
 def format_placeholders(title, cdn, taka, link, advnc_req, discount, week):
-    body = f"\n    ++ SHOPTOBD DEAL[Delivery in 18 Days]++" \
+    body = f"\n-->> BLACK FRIDAY DEAL [24HRS] <<--" \
            f"\n----------------------------------" \
            f"\n{title}{ ' - ' + str(discount) + ' OFF' if discount !=[] else ''}" \
            f"\nSale Price - ${str(cdn)} (with Tax)" \
            f"\nIN BDT - TK {taka} " \
            f"\n+\nWeight Charge (To be Added After Product Arrival to BD)" \
-           f"\nFor products <100g = 150TK Flat" \
-           f"\nFor products >100g up to 2kg = 160TK/100g" \
-           f"\nFor products >2kg = 1700TK/Kg" \
+           f"\n Rate - 160TK/100g" \
            f"\n----------------------------------" \
            f"\nProduct Link: {str(link)} " \
            f"\n----------------------------------" \
            f"\nAdvance Required - TK {advnc_req}" \
            f"\nQuantity Available - Limited" \
-           f"\nOrder by:While the deal lasts " \
+           f"\n Deal Starts - Today " \
+           f"\n Deal Ends - 24hrs from Post (While Stock Lasts)" \
            f"\nExpected Shipment Arrival: \n{str(week)}" \
            f"\n----------------------------------" \
-           f"\n**ATTENTION: Please try to use PC/Laptop & Google Chrome Browser. The system isn't fully compatible in Mobile or other browsers.**" \
+           f"\n How to Order (For Black Friday Only):" \
            f"\n\nHow to Order:" \
-           f"\n1. Sign In/Sign Up to our Ordering Portal here: http://www.shoptobd.com/#Order-Portal" \
-           f"\n(Please look for the verification email in your Spam/Junk Folder! )" \
-           f"\n2.Place the order." \
-           f"\n(Link of the video tuitorial:https://www.facebook.com/shoptobd/videos/1603252439764453/)" \
-           f"\n3.Shoptobd will verify all the information provided and will generate the Initial Invoice. Log back later to check it. " \
-           f"\n4.Pay the Advance through the methods mentioned in the Dashboard of your account. Note the 2% fee associated with bKash Payment." \
-           f"\n5. Contact us in FB or through email with the proof of payment, either picture for Deposit Slip or Number/Transaction ID for bKash" \
-           f"\n6. Once Payment is confirmed, the order will be placed.\n"
+           f"\nStep 1:" \
+           f"\n- Sign In/Sign Up to our Ordering Portal here: http://app.shoptobd.com/" \
+           f"\n- Place the order. (Tutorial Video, if needed: http://bit.ly/shoptobdorder)" \
+           f"\n- Shoptobd will verify the order & generate the Initial Invoice. Log back later to check it & contact us to confirm." \
+           f"\nStep 2:  " \
+           f"\nOnce order is confirmed, it will placed right away (provided the deal is still active)." \
+           f"\nStep 3: " \
+           f"\nYou will have 48-hrs to proceed with the advance for your order. Payment Methods are mentioned in your account dashboard.\n"
     return body
 
 
-def scrap_data(url: str, i, rate: int = 75, week: str = "Mid November"):
+def scrap_data(url: str, i, rate: int = 75, week: str = "Mid December"):
 
 
     if url.startswith('https://www.amazon.ca'):
@@ -55,7 +55,7 @@ def scrap_data(url: str, i, rate: int = 75, week: str = "Mid November"):
         price = amazon.find_all('span', attrs={'id':['priceblock_ourprice','priceblock_dealprice']})[0].getText().strip()
         discount = amazon.find_all('tr', attrs={'id': ['regularprice_savings',"dealprice_savings"]})
         image_link = amazon.find_all('img',
-                                     attrs={'class': ['a-dynamic-image', ' a-stretch-vertical'],
+                                     attrs={'class': ['a-   dynamic-image', ' a-stretch-vertical'],
                                             'id': 'landingImage'})[0].attrs['data-old-hires'].strip()
         if image_link=='':
             image_link = amazon.find_all('img',
@@ -219,14 +219,17 @@ def scrap_data(url: str, i, rate: int = 75, week: str = "Mid November"):
             #     discount = math.floor(((float(price) - float(discount)) / float(price)) * 100)
             #     discount = str(discount) + '%'
             # else:
-            # cdn = float(discounted_price)-((float(discounted_price) * 25) / 100)
-            discount = math.floor(((price - discounted_price) / price) * 100)
+            discounted_price_extra = float(discounted_price) - ((float(discounted_price) * 30) / 100)
+            discount = math.floor(((price - discounted_price_extra) / price) * 100)
             discount = str(discount) + '%'
 
-            cdn = math.ceil(((discounted_price + 0.25) + ((discounted_price + 0.25) * 15) / 100))
+            cdn = math.ceil(((discounted_price_extra + 0.25) + ((discounted_price_extra + 0.25) * 15) / 100))
 
         else:
-            cdn = math.ceil(((float(price)+ 0.25) + ((float(price) + 0.25) * 15) / 100))
+            discount = '30%'
+            discounted_price_extra = float(price) - ((float(price) * 30) / 100)
+            cdn = math.ceil(
+                ((float(discounted_price_extra) + 0.25) + ((float(discounted_price_extra) + 0.25) * 15) / 100))
 
         taka = cdn * rate
         advnc_req = "{:,}".format(math.ceil((taka / 2.5) / 100) * 100)
@@ -351,7 +354,8 @@ def scrap_data(url: str, i, rate: int = 75, week: str = "Mid November"):
 
         mk = bs4.BeautifulSoup(res, 'html.parser')
 
-        name = mk.find_all('li',attrs={'class':'product-name'})[0].text
+        name = mk.find_all('li', attrs={'class': 'product-name'})
+        print(name)
 
         image_link = mk.find_all('figure', attrs={'class':'gallery-images-item'})
 
@@ -360,7 +364,8 @@ def scrap_data(url: str, i, rate: int = 75, week: str = "Mid November"):
         except Exception:
             print (Exception)
 
-        title = mk.find_all('ul', attrs={'class': 'brand-desc-container'})[0].text.split('#')[0].replace('Style','').strip()
+        title = mk.find_all('div', attrs={'class': 'commerce-area-wrapper large-8 pdp-main-commerce'})
+        print(title)
         color = mk.find('span', attrs={'class': 'selected-color'}).text
 
         title = title.replace('KORS','KORS ').replace('Kors','Kors ') + '(Color:' + color + ')'
@@ -513,9 +518,8 @@ def scrap_data(url: str, i, rate: int = 75, week: str = "Mid November"):
 
         browser = webdriver.Firefox(executable_path='webDrivers/geckodriver', options=options)
         browser.get(url)
-
+        time.sleep(1)
         res = browser.page_source
-
         browser.quit()
 
         adidas = bs4.BeautifulSoup(res, 'html.parser')
