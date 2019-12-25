@@ -713,7 +713,60 @@ def scrap_data(url: str, i, rate: int = 75, week: str = "Mid December"):
         outfile = open("out.txt", "a+")
         outfile.write(format_placeholders(title, cdn, taka, url, advnc_req, discount, week))
         outfile.close()
+    elif url.startswith('https://www.globoshoes.com/ca/en/'):
 
+        options = Options()
+        options.add_argument("--headless")
+
+        browser = webdriver.Firefox(executable_path='webDrivers/geckodriver', options=options)
+        browser.get(url)
+
+        brand = browser.find_element_by_css_selector("h1.c-buy-module__brand").text
+        product_name = browser.find_element_by_css_selector('h2.c-buy-module__product-title').text
+        color = browser.find_element_by_css_selector(".c-product-option__label-current-selection").text
+        price = browser.find_elements_by_css_selector('.c-product-price__formatted-price')
+        original_price = float(price[0].text.replace('$','').strip())
+        if len(price)>1:
+            discounted__price = float(price[1].text.replace('$','').strip())
+        else:
+            discounted__price = ""
+
+        chobi = browser.find_element_by_css_selector('.c-picture img').get_attribute('srcset' or 'data-srcset').split("//")[-1].split()[0]
+
+        title = f"{brand} {product_name}({color})"
+
+        if discounted__price:
+            cdn = discounted__price
+            discount = math.floor(((original_price - cdn) / original_price) * 100)
+            discount = str(discount) + '%'
+        else:
+            cdn = original_price
+
+
+        if cdn < 60:
+            cdn = math.ceil((cdn+6) + (((cdn+6)*15)/100))
+
+        else:
+           cdn = math.ceil((cdn+((cdn*15)/100)))
+
+        taka = cdn * rate
+        advnc_req = "{:,}".format(math.ceil((taka / 2.5) / 100) * 100)
+        taka = "{:,}".format(cdn*rate)
+
+        image_link = 'http://' + chobi
+
+        filename = str(i)+'. '+ product_name + '.jpg'
+        urllib.request.urlretrieve(image_link, filename)
+
+        output = "Title: " + title + "\nPrice: " + str(cdn) + (
+        "\nDiscount: " + str(discount) if discount != [] else "") + "\nShipping Time: " + str(week) + "\n" + (
+                     "*" * 30)
+        print(output)
+        outfile = open("out.txt", "a+")
+        outfile.write(format_placeholders(title, cdn, taka, url, advnc_req, discount, week))
+        outfile.close()
+
+        browser.quit()
 
 
 
